@@ -6,7 +6,7 @@
 
 void list_free(t_list *list)
 {
-	free(list->content);
+	free(list->content.str);
 	free(list);
 }
 
@@ -14,7 +14,7 @@ void list_free(t_list *list)
 ** list primitive
 */
 
-t_list *list_new(void *content)
+t_list *list_new(union u_sh content)
 {
 	t_list *n;
 

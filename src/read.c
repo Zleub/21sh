@@ -3,23 +3,28 @@
 void split_word(t_list *a, t_list *b)
 {
 	if (b)
-		list_push(&g_sh.word_list, list_new(ft_strsub(g_sh.line, *((int*)a->content), *((int*)b->content) - *((int*)a->content))));
+		list_push(&g_sh.word_list, list_new((union u_sh)ft_strsub(g_sh.line, a->content.i, b->content.i - a->content.i)));
 	else
-		list_push(&g_sh.word_list, list_new(ft_strsub(g_sh.line, *((int*)a->content), ft_strlen(g_sh.line) - *((int*)a->content))));
+		list_push(&g_sh.word_list, list_new((union u_sh)ft_strsub(g_sh.line, a->content.i, ft_strlen(g_sh.line) - a->content.i)));
 }
 
 void trim_word(t_list *e)
 {
 	char *s;
 
-	s = ft_strtrim((char *)e->content);
-	free(e->content);
-	e->content = s;
+	s = ft_strtrim(e->content.str);
+	free(e->content.str);
+	e->content.str = s;
 }
 
 int ft_iscommand(char c)
 {
 	return c == ';';
+}
+
+void print_int(t_list *e)
+{
+	printf("%d\n", e->content.i);
 }
 
 int get_word(char *line)
@@ -28,22 +33,19 @@ int get_word(char *line)
 	t_list *stack;
 
 	i = 0;
-	int *p;
 	while(line[i])
 	{
 		if (line[i] && ft_iscommand(line[i]))
 			i += 1;
 		else
 		{
-			p = malloc(sizeof(int));
-			*p = i;
-			list_push(&stack, list_new(p));
+			list_push(&stack, list_new((union u_sh)i));
 			while (line[i] && !ft_iscommand(line[i]))
 				i += 1;
 		}
 	}
+
 	list_reduce(stack, split_word);
-	list_iter(stack, list_free);
 	list_iter(g_sh.word_list, trim_word);
 	return (0);
 }
@@ -65,49 +67,58 @@ t_command * create_command(int argc, char **argv)
 	return (e);
 }
 
-void print_command(t_list *e)
+void __print_command(t_command *c)
 {
-	printf("command: %d, %s\n", ((t_command *)e->content)->argc, ((t_command *)e->content)->argv[0]);
+	printf("command: %d, %s\n", c->argc, c->argv[0]);
 	int i = 1;
-	while (((t_command *)e->content)->argv[i])
+	while (c->argv[i])
 	{
-		printf("\t%s\n", ((t_command *)e->content)->argv[i]);
+		printf("\t%s\n", c->argv[i]);
 		i += 1;
 	}
 	i = 0;
 	while (i < FD_LIMIT)
 	{
-		if (i < 3 || ((t_command *)e->content)->fds[i][1] != 0)
-			printf("\t%d %d\n", ((t_command *)e->content)->fds[i][0], ((t_command *)e->content)->fds[i][1]);
+		if (c->fds[i][1] != 0 && i < 3)
+			printf("\t%d %d\n", c->fds[i][0], c->fds[i][1]);
 		i += 1;
 	}
+	if (c->next)
+		__print_command(c->next);
+}
+
+void print_command(t_list *e)
+{
+	__print_command(e->content.command);
 }
 
 void word_to_commands(t_list *e)
 {
-	printf("word_to_commands %s\n", (char *)e->content);
+	printf("word_to_commands %s\n", e->content.str);
 
-	t_list *stack;
-	(void)stack;
-	char **s = ft_strsplit((char *)e->content, '|');
-	// free(e->content);
-	// e->content = create_command(42, s);
+	char **s = ft_strsplit(e->content.str, '|');
+
 	int i = 0;
-
-	char *_s;
+	t_command **acc = &e->content.command;
+	free(e->content.str);
 	while (s[i])
 	{
-		_s = ft_strtrim(s[i]);
+		char *_s = ft_strtrim(s[i]);
 		free(s[i]);
 		s[i] = _s;
 
-		t_command *e = create_command(i, (char *[]){ _s, 0 });
-		list_push(&stack, list_new(e));
-
-		printf("-> %s\n", s[i]);
+		char **argv = ft_memalloc(sizeof(char *) * 2);
+		argv[0] = _s;
+		argv[1] = 0;
+		*acc = create_command(i, argv);
+		acc = &((*acc)->next);
 		i += 1;
 	}
-	list_iter(stack, print_command);
+}
+
+void print_word(t_list *e)
+{
+	printf("word: %s\n", e->content.str);
 }
 
 int _read(void)
@@ -119,8 +130,10 @@ int _read(void)
 	// 	return (-1);
 
 	get_word(g_sh.line);
+	list_iter(g_sh.word_list, print_word);
 
 	list_iter(g_sh.word_list, word_to_commands);
+	list_iter(g_sh.word_list, print_command);
 
 	while (42) ;
 	return (0);
