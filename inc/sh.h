@@ -48,12 +48,14 @@ struct s_list
 };
 
 extern t_sh g_sh;
+extern char **environ;
 
 t_list *list_new(union u_sh content);
 void list_push(t_list **list, t_list *new);
 void list_iter(t_list *list, void(*f)(t_list*));
-void list_reduce(t_list *list, void(*f)(t_list*, t_list *));
+void list_fold_left(t_list *list, void(*f)(t_list*, t_list *));
 void list_free(t_list *list);
+void list_free_content(t_list *list);
 
 int _read(void);
 

@@ -4,9 +4,13 @@
 ** list management utils
 */
 
-void list_free(t_list *list)
+void list_free_content(t_list *list)
 {
 	free(list->content.str);
+	free(list);
+}
+void list_free(t_list *list)
+{
 	free(list);
 }
 
@@ -40,14 +44,16 @@ void list_push(t_list **list, t_list *new)
 
 void list_iter(t_list *list, void(*f)(t_list*))
 {
+	t_list *next;
 	while (list)
 	{
+		next = list->next;
 		f(list);
-		list = list->next;
+		list = next;
 	}
 }
 
-void list_reduce(t_list *list, void(*f)(t_list*, t_list *))
+void list_fold_left(t_list *list, void(*f)(t_list*, t_list *))
 {
 	while (list)
 	{
