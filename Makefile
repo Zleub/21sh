@@ -6,7 +6,7 @@ OBJ = $(subst .c,.o, $(SRC))
 
 CC = clang
 HEADDIR ?= -I$(PWD)/inc -I$(PWD)/libft/inc
-CFLAGS ?= -Wall -Werror -Wextra $(HEADDIR)
+CFLAGS ?= -Wall -Werror -Wextra $(HEADDIR) # -g -fsanitize=address
 LDFLAGS ?= -lft -Llibft -lsh -L.
 
 all: libft $(LIBNAME) $(NAME) main.c
