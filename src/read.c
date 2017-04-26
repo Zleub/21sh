@@ -1,53 +1,5 @@
 #include <sh.h>
 
-struct s_notif_signal {
-	int sig;
-	char *sig_name;
-	char *sig_descrption;
-};
-
-struct s_notif_signal	notif_array[] = {
-	{ 0,     "NO_SIG",     "shoud not happen" },
-	{ 1,     "SIGHUP",     "terminal line hangup" },
-	{ 2,     "SIGINT",     "interrupt program" },
-	{ 3,     "SIGQUIT",    "quit program" },
-	{ 4,     "SIGILL",     "illegal instruction" },
-	{ 5,     "SIGTRAP",    "trace trap" },
-	{ 6,     "SIGABRT",    "abort program (formerly SIGIOT)" },
-	{ 7,     "SIGEMT",     "emulate instruction executed" },
-	{ 8,     "SIGFPE",     "floating-point exception" },
-	{ 9,     "SIGKILL",    "kill program" },
-	{ 10,    "SIGBUS",     "bus error" },
-	{ 11,    "SIGSEGV",    "segmentation violation" },
-	{ 12,    "SIGSYS",     "non-existent system call invoked" },
-	{ 13,    "SIGPIPE",    "write on a pipe with no reader" },
-	{ 14,    "SIGALRM",    "real-time timer expired" },
-	{ 15,    "SIGTERM",    "software termination signal" },
-	{ 16,    "SIGURG",     "urgent condition present on socket" },
-	{ 17,    "SIGSTOP",    "stop (cannot be caught or ignored)" },
-	{ 18,    "SIGTSTP",    "stop signal generated from keyboard" },
-	{ 19,    "SIGCONT",    "continue after stop" },
-	{ 20,    "SIGCHLD",    "child status has changed" },
-	{ 21,    "SIGTTIN",    "background read attempted from control terminal" },
-	{ 22,    "SIGTTOU",    "background write attempted to control terminal" },
-	{ 23,    "SIGIO",      "I/O is possible on a descriptor (see fcntl(2))" },
-	{ 24,    "SIGXCPU",    "cpu time limit exceeded (see setrlimit(2))" },
-	{ 25,    "SIGXFSZ",    "file size limit exceeded (see setrlimit(2))" },
-	{ 26,    "SIGVTALRM",  "virtual time alarm (see setitimer(2))" },
-	{ 27,    "SIGPROF",    "profiling timer alarm (see setitimer(2))" },
-	{ 28,    "SIGWINCH",   "Window size change" },
-	{ 29,    "SIGINFO",    "status request from keyboard" },
-	{ 30,    "SIGUSR1",    "User defined signal 1" },
-	{ 31,    "SIGUSR2",    "User defined signal 2" }
-};
-
-void notify_signal(int sig)
-{
-	struct s_notif_signal *notif = &notif_array[sig];
-	(void)notif;
-	printf("[%d] notify_signal: %d -> %s (%s)\n", getpid(), sig, notif->sig_name, notif->sig_descrption);
-}
-
 void split_word(t_list *a, t_list *b)
 {
 	if (b)
@@ -188,18 +140,21 @@ void __fork_command(t_command *e)
 	printf("fork_command %s %s\n", e->argv[0], e->argv[1]);
 	// printf("B errno %d -> %s\n", errno, strerror(errno));
 
-	errno = 0;
+	// errno = 0;
+	g_sh.command_nbr += 1;
 	pid_t p = fork();
 	if (p >= 0)
 	{
 		if (p == 0) {
-			// printf("Child Process %d\n", getpid());
+			printf("Child Process %d\n", getpid());
 			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[0][1], e->fds[0][0]), e->fds[0][1], e->fds[0][0]);
 			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[1][1], e->fds[1][0]), e->fds[1][1], e->fds[1][0]);
 			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[2][1], e->fds[2][0]), e->fds[2][1], e->fds[2][0]);
+
 			// dup2(e->fds[0][1], e->fds[0][0]);
 			// dup2(e->fds[1][1], e->fds[1][0]);
 			// dup2(e->fds[2][1], e->fds[2][0]);
+
 			// signal(SIGTTOU, SIG_IGN);
 			// signal(SIGTTIN, SIG_IGN);
 
@@ -211,9 +166,6 @@ void __fork_command(t_command *e)
 				printf("errno %d -> %s\n", errno, strerror(errno));
 		}
 		else {
-			// int status;
-			// wait(&status);
-			printf("Parent process\n");
 			// printf("C errno %d -> %s\n", errno, strerror(errno));
 			if (e->next)
 				__fork_command(e->next);
@@ -230,15 +182,15 @@ void fork_command(t_list *e)
 
 int _read(void)
 {
-	printf("current: (%d)\n", getpid());
-	g_sh.line = "cat Makefile | cat | cat -ent ";
+	// printf("current: (%d)\n", getpid());
+	// g_sh.line = "cat auteur | cat | cat -ent ";
 	// g_sh.line = "mkdir test ; cd test ; ls -a ; ls | cat | wc -c > fifi ; cat fifi";
-	// char *s = "prompt: >";
-	// write(1, s, ft_strlen(s));
-	// if (get_next_line(STDIN_FILENO, &(g_sh.line)) == -1)
-	// 	return (errno = ERR_READ);
-	// if (!g_sh.line)
-	// 	return (-1);
+	char *s = "prompt: > ";
+	write(1, s, ft_strlen(s));
+	if (get_next_line(STDIN_FILENO, &(g_sh.line)) == -1)
+		return (errno = ERR_READ);
+	if (!g_sh.line)
+		return (-1);
 
 	get_word(g_sh.line);
 	list_iter(g_sh.word_list, print_word);
@@ -258,33 +210,41 @@ int _read(void)
 	// 	i += 1;
 	// }
 
-	errno = 0;
-	// printf("-Z errno %d -> %s\n", errno, strerror(errno));
-	pid_t p = fork();
 	// errno = 0;
-	if (p >= 0)
-	{
-		if (p == 0) {
+	// printf("-Z errno %d -> %s\n", errno, strerror(errno));
+	// pid_t p = fork();
+	// errno = 0;
+	// if (p >= 0)
+	// {
+	// 	if (p == 0) {
 			// printf("A errno %d -> %s\n", errno, strerror(errno));
+			// signal(SIGCHLD, notify_signal);
+
 			list_iter(g_sh.word_list, fork_command);
-		}
-		else {
-			signal(SIGCHLD, notify_signal);
+			// while (g_sh.command_nbr > 0)
+			// {
+				int status = 0;
+				printf("before wait\n");
+				printf("Father wait %d\n", wait(&status));
+			// 	g_sh.command_nbr -= 1;
+			// }
+		// }
+		// else {
+		// 	int status = 0;
+		// 	printf("GrandFather wait %d\n", wait(&status));
+		// 	printf("GrandFather command_nbr %d\n", g_sh.command_nbr);
 			// printf("test\n");
-			int status = 0;
-			printf("GrandFather wait %d\n", wait(&status));
-			printf("Parent process %d\n", status);
 			// printf("D errno %d -> %s\n", errno, strerror(errno));
-		}
-	}
-	else
-		printf("Fork failed\n");
+	// 	}
+	// }
+	// else
+	// 	printf("Fork failed\n");
 
 	list_iter(g_sh.word_list, list_free_content);
 	g_sh.word_list = 0;
 
 	// printf("standard return for read loop\n");
 	// while (42) ;
-	// return (_read());
+	return (_read());
 	return (0);
 }

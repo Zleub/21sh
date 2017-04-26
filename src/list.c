@@ -18,6 +18,19 @@ void list_free(t_list *list)
 ** list primitive
 */
 
+int		list_len(t_list *list)
+{
+	int i;
+
+	i = 0;
+	while (list)
+	{
+		i += 1;
+		list = list->next;
+	}
+	return (i);
+}
+
 t_list *list_new(union u_sh content)
 {
 	t_list *n;
