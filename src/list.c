@@ -4,7 +4,21 @@
 ** list management utils
 */
 
-void list_free_content(t_list *list)
+void list_free_command(t_list *list)
+{
+	int i;
+
+	i = 0;
+	while (list->content.command->argv[i])
+	{
+		free(list->content.command->argv[i]);
+		i += 1;
+	}
+	free(list->content.command->argv);
+	free(list->content.command);
+	free(list);
+}
+void list_free_str(t_list *list)
 {
 	free(list->content.str);
 	free(list);

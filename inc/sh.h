@@ -5,6 +5,7 @@
 # include <errno.h>
 # include <fcntl.h>
 # include <signal.h>
+# include <sys/stat.h>
 
 # include <libft.h>
 
@@ -53,7 +54,8 @@ extern t_sh g_sh;
 extern char **environ;
 
 void list_free(t_list *list);
-void list_free_content(t_list *list);
+void list_free_str(t_list *list);
+void list_free_command(t_list *list);
 
 int list_len(t_list *list);
 
@@ -63,5 +65,6 @@ void list_iter(t_list *list, void(*f)(t_list*));
 void list_fold_left(t_list *list, void(*f)(t_list*, t_list *));
 
 int _read(void);
+int _error(void);
 
 #endif

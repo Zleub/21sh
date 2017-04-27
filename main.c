@@ -8,7 +8,7 @@ struct s_notif_signal {
 	char *sig_descrption;
 };
 
-struct s_notif_signal	notif_array[] = {
+struct s_notif_signal	notif_signal[] = {
 	{ 0,     "NO_SIG",     "shoud not happen" },
 	{ 1,     "SIGHUP",     "terminal line hangup" },
 	{ 2,     "SIGINT",     "interrupt program" },
@@ -45,16 +45,16 @@ struct s_notif_signal	notif_array[] = {
 
 void notify_signal(int sig)
 {
-	struct s_notif_signal *notif = &notif_array[sig];
+	struct s_notif_signal *notif = &notif_signal[sig];
 	printf("[%d] notify_signal: %d -> %s (%s)\n", getpid(), sig, notif->sig_name, notif->sig_descrption);
 }
 
 int _init(void)
 {
 	struct sigaction action = {
-		.__sigaction_u = (union __sigaction_u)notify_signal,
+		.__sigaction_u = (union __sigaction_u)SIG_DFL,
 		.sa_mask = SIGCHLD,
-		.sa_flags = SA_NOCLDSTOP & SA_NOCLDWAIT
+		.sa_flags = SA_RESTART & SA_NOCLDSTOP & SA_NOCLDWAIT
 	};
 	sigaction(SIGCHLD, &action, 0);
 	return (0);
@@ -66,7 +66,7 @@ struct s_notif_errno {
 	char *err_description;
 };
 
-struct s_notif_errno errno_array[] = {
+struct s_notif_errno notif_errno[] = {
 	{ 0,	"NO_ERR",			"shoud not happen" },
 	{ 1,	"EPERM",			"Operation not permitted" },
 	{ 2,	"ENOENT",			"No such file or directory" },
@@ -196,12 +196,24 @@ struct s_notif_errno errno_array[] = {
 	{ 128,	"EKEYREVOKED",		"Key has been revoked" },
 	{ 129,	"EKEYREJECTED",		"Key was rejected by service" },
 	{ 130,	"EOWNERDEAD",		"Owner died" },
-	{ 131,	"ENOTRECOVERABLE",	"State not recoverable" }
+	{ 131,	"ENOTRECOVERABLE",	"State not recoverable" },
+	{ 256,	"ERR_READ",			"get_next_line -1 return" }
 };
 
 int _error(void)
 {
-	struct s_notif_errno *err = &errno_array[errno];
+	struct s_notif_errno *err = NULL;
+	int i = 0;
+
+	while (i < (int)(sizeof(notif_errno) / sizeof(struct s_notif_errno)))
+	{
+		if (errno == notif_errno[i].err)
+		{
+			err = &notif_errno[i];
+			break ;
+		}
+		i += 1;
+	}
 	printf("Error: %d -> %s: %s\n", err->err, err->err_name, err->err_description);
 	return (0);
 }

@@ -138,32 +138,62 @@ void print_word(t_list *e)
 void __fork_command(t_command *e)
 {
 	printf("fork_command %s %s\n", e->argv[0], e->argv[1]);
-	// printf("B errno %d -> %s\n", errno, strerror(errno));
 
-	// errno = 0;
 	g_sh.command_nbr += 1;
 	pid_t p = fork();
 	if (p >= 0)
 	{
 		if (p == 0) {
 			printf("Child Process %d\n", getpid());
-			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[0][1], e->fds[0][0]), e->fds[0][1], e->fds[0][0]);
-			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[1][1], e->fds[1][0]), e->fds[1][1], e->fds[1][0]);
-			dprintf(2, "%d: dup2 %d -> %d\n", dup2(e->fds[2][1], e->fds[2][0]), e->fds[2][1], e->fds[2][0]);
 
-			// dup2(e->fds[0][1], e->fds[0][0]);
-			// dup2(e->fds[1][1], e->fds[1][0]);
-			// dup2(e->fds[2][1], e->fds[2][0]);
+			dup2(e->fds[0][1], e->fds[0][0]);
+			dup2(e->fds[1][1], e->fds[1][0]);
+			dup2(e->fds[2][1], e->fds[2][0]);
 
-			// signal(SIGTTOU, SIG_IGN);
-			// signal(SIGTTIN, SIG_IGN);
+			int i = 0;
+			char *p = NULL;
+			while (environ[i])
+			{
+				char **s = ft_strsplit(environ[i], '=');
+				if (!ft_strcmp(s[0], "PATH"))
+				{
+					p = s[1];
+					break ;
+				}
+				free(s[0]);
+				free(s[1]);
+				free(s);
+				i += 1;
+			}
 
-			char s[] = "/bin/cat";
-			// ft_strcat(s, e->argv[0]);
-			// printf("execve %s\n", s);
-			int ret = execve(s, e->argv, environ);
+			struct stat _stat;
+			char **_p = ft_strsplit(p, ':');
+
+			char *__;
+			char *path;
+			i = 0;
+			while (_p[i])
+			{
+				__ = malloc( strlen(_p[i]) + 2 );
+				ft_strcpy(__, _p[i]);
+				ft_strcat(__, "/");
+
+				path = ft_strjoin(__, e->argv[0]);
+				if ( stat(path, &_stat) != -1 )
+				{
+					free(__);
+					break ;
+				}
+				free(__);
+				i += 1;
+			}
+
+			int ret = execve(path, e->argv, environ);
 			if (ret == -1)
+			{
 				printf("errno %d -> %s\n", errno, strerror(errno));
+				exit(ENOENT);
+			}
 		}
 		else {
 			// printf("C errno %d -> %s\n", errno, strerror(errno));
@@ -198,53 +228,20 @@ int _read(void)
 	list_iter(g_sh.word_list, word_to_commands);
 	list_iter(g_sh.word_list, print_command);
 
-	// int i = 0;
-	// while (environ[i])
-	// {
-	// 	char **s = ft_strsplit(environ[i], '=');
-	// 	if (!ft_strcmp(s[0], "PATH"))
-	// 		printf("%s\n", s[1]);
-	// 	free(s[0]);
-	// 	free(s[1]);
-	// 	free(s);
-	// 	i += 1;
-	// }
+	list_iter(g_sh.word_list, fork_command);
 
-	// errno = 0;
-	// printf("-Z errno %d -> %s\n", errno, strerror(errno));
-	// pid_t p = fork();
-	// errno = 0;
-	// if (p >= 0)
-	// {
-	// 	if (p == 0) {
-			// printf("A errno %d -> %s\n", errno, strerror(errno));
-			// signal(SIGCHLD, notify_signal);
+	int status = 0;
+	printf("before wait\n");
+	int w = wait(&status);
+	if (w == -1)
+		_error();
 
-			list_iter(g_sh.word_list, fork_command);
-			// while (g_sh.command_nbr > 0)
-			// {
-				int status = 0;
-				printf("before wait\n");
-				printf("Father wait %d\n", wait(&status));
-			// 	g_sh.command_nbr -= 1;
-			// }
-		// }
-		// else {
-		// 	int status = 0;
-		// 	printf("GrandFather wait %d\n", wait(&status));
-		// 	printf("GrandFather command_nbr %d\n", g_sh.command_nbr);
-			// printf("test\n");
-			// printf("D errno %d -> %s\n", errno, strerror(errno));
-	// 	}
-	// }
-	// else
-	// 	printf("Fork failed\n");
-
-	list_iter(g_sh.word_list, list_free_content);
+	// while (42) ;
+	list_iter(g_sh.word_list, list_free_command);
 	g_sh.word_list = 0;
 
 	// printf("standard return for read loop\n");
-	// while (42) ;
+	free(g_sh.line);
 	return (_read());
-	return (0);
+	// return (0);
 }
