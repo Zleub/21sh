@@ -67,4 +67,6 @@ void list_fold_left(t_list *list, void(*f)(t_list*, t_list *));
 int _read(void);
 int _error(void);
 
+void notify_signal(int sig);
+
 #endif

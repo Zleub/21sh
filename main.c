@@ -46,7 +46,7 @@ struct s_notif_signal	notif_signal[] = {
 void notify_signal(int sig)
 {
 	struct s_notif_signal *notif = &notif_signal[sig];
-	printf("[%d] notify_signal: %d -> %s (%s)\n", getpid(), sig, notif->sig_name, notif->sig_descrption);
+	dprintf(2, "[%d] notify_signal: %d -> %s (%s)\n", getpid(), sig, notif->sig_name, notif->sig_descrption);
 }
 
 int _init(void)
